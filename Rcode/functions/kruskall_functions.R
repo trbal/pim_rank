@@ -96,7 +96,15 @@ summary.kw.pim <- function(object,method,
       stop("'method' is not correctly defined")
     }
   }
-  
+  if(method == "Wald"){
+    chi_sq = object@wald
+    df_cs = object@df_w
+    pr_cs = object@pr_w
+  } else {
+    chi_sq = object@chi_sq
+    df_cs = object@df_cs
+    pr_cs = object@pr_cs
+  }
   new("kw.pim.summary",
       formula=object@formula,
       coef = object@coef,
@@ -106,9 +114,9 @@ summary.kw.pim <- function(object,method,
       zwald = object@zwald,
       pr = object@pr,
       prwald = object@prwald,
-      chi_sq = object@chi_sq,
-      df_cs = object@df_cs,
-      pr_cs = object@pr_cs,
+      chi_sq = chi_sq,
+      df_cs = df_cs,
+      pr_cs = pr_cs,
       h0 = object@h0,
       method = method
   )
@@ -308,4 +316,3 @@ setMethod('confint',
 setMethod('confint',
           'kw.pim.summary',
           confint.kw.pim.summary)
-
