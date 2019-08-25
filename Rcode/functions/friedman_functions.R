@@ -40,6 +40,8 @@ friedman.pim <- function(formula, data, h0 = 0.5,...){
   pval_overall <- 1 - pchisq(overall_test,df_overall)
   
   pim.wald <- rank.pim(data, groups, y, compare, sandwich.vcov)
+  wald <- t(coef(pim.wald))%*%ginv(vcov(pim.wald))%*%c(coef(pim.wald))
+  p.wald <- 1 - pchisq(wald, df_overall)
   
   
   new('friedman.pim',
@@ -54,6 +56,8 @@ friedman.pim <- function(formula, data, h0 = 0.5,...){
       chi_sq = as.numeric(overall_test),
       df_cs = as.numeric(df_overall),
       pr_cs = as.numeric(pval_overall),
+      wald = as.numeric(wald),
+      pr_w = as.numeric(p.wald),
       h0 = h0
   )
 }
@@ -71,6 +75,8 @@ setClass(
             chi_sq = 'numeric',
             df_cs = 'numeric',
             pr_cs = 'numeric',
+            wald = 'numeric',
+            pr_w = 'numeric',
             h0 = 'numeric'
   )
 )
@@ -87,6 +93,13 @@ summary.friedman.pim <- function(object,method,
     }
   }
     
+  if(method == "Wald"){
+    chi_sq = object@wald
+    pr_cs = object@pr_w
+  } else {
+    chi_sq = object@chi_sq
+    pr_cs = object@pr_cs
+  }
   
   new("friedman.pim.summary",
       formula=object@formula,
@@ -97,9 +110,9 @@ summary.friedman.pim <- function(object,method,
       zwald = object@zwald,
       pr = object@pr,
       prwald = object@prwald,
-      chi_sq = object@chi_sq,
+      chi_sq = chi_sq,
       df_cs = object@df_cs,
-      pr_cs = object@pr_cs,
+      pr_cs = pr_cs,
       h0 = object@h0,
       method = method
   )
@@ -305,4 +318,3 @@ setMethod('confint',
 setMethod('confint',
           'friedman.pim.summary',
           confint.friedman.pim.summary)
-
