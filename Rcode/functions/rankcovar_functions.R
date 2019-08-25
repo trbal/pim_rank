@@ -37,7 +37,6 @@ rank_covar.pim <- function(formula, data, h0 = 0.5, ...){
   pim.score <- pim.rankf(formula, data, pim.prim, new.mm,
                          group, covar = covar, vcov.estim = score.vcov)
   
-  df_overall <- length(coef(pim.score))
   if(suppressWarnings(!is.na(covar))){
     pim.score@coef <- pim.score@coef[-length(pim.score@coef)]
     pim.score@vcov <- pim.score@vcov[, -ncol(pim.score@vcov),drop=FALSE]
@@ -46,7 +45,7 @@ rank_covar.pim <- function(formula, data, h0 = 0.5, ...){
   
   #pim.score@coef <- pim.score@coef - 0.5/ncol(model.matrix(pim.score))
   overall_test <- t(coef(pim.score)-0.5)%*%ginv(vcov(pim.score))%*%c(coef(pim.score)-0.5)
-  
+  df_overall <- length(coef(pim.score))
   pval_overall <- 1 - pchisq(overall_test,df_overall)
   
   
@@ -58,6 +57,8 @@ rank_covar.pim <- function(formula, data, h0 = 0.5, ...){
     pim.wald@vcov <- pim.wald@vcov[, -ncol(pim.wald@vcov),drop=FALSE]
     pim.wald@vcov <- pim.wald@vcov[ -nrow(pim.wald@vcov), ,drop=FALSE]
   }
+  wald <- t(coef(pim.wald)-0.5)%*%ginv(vcov(pim.wald))%*%c(coef(pim.wald)-0.5)
+  p.wald <- 1 - pchisq(wald,df_overall)
   
   new('rank_covar.pim',
       formula = formula,
@@ -71,6 +72,8 @@ rank_covar.pim <- function(formula, data, h0 = 0.5, ...){
       chi_sq = as.numeric(overall_test),
       df_cs = as.numeric(df_overall),
       pr_cs = as.numeric(pval_overall),
+      wald = as.numeric(wald),
+      pr_w = as.numeric(p.wald),
       h0 = h0
   )
 }
@@ -88,6 +91,8 @@ setClass(
             chi_sq = 'numeric',
             df_cs = 'numeric',
             pr_cs = 'numeric',
+            wald = 'numeric',
+            pr_w = 'numeric',
             h0 = 'numeric'
   )
 )
@@ -104,6 +109,13 @@ summary.rank_covar.pim <- function(object,method,
     }
   }
   
+  if(method == "Wald"){
+    chi_sq = object@wald
+    pr_cs = object@pr_w
+  } else {
+    chi_sq = object@chi_sq
+    pr_cs = object@pr_cs
+  }
   
   new("rank_covar.pim.summary",
       formula=object@formula,
@@ -114,9 +126,9 @@ summary.rank_covar.pim <- function(object,method,
       zwald = object@zwald,
       pr = object@pr,
       prwald = object@prwald,
-      chi_sq = object@chi_sq,
+      chi_sq = chi_sq,
       df_cs = object@df_cs,
-      pr_cs = object@pr_cs,
+      pr_cs = pr_cs,
       h0 = object@h0,
       method = method
   )
