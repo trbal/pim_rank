@@ -30,33 +30,23 @@ wilcox.pim <- function(formula, data, h0 = 0.5,alternative="two.sided",...){
   
   #new_formula <- as.formula(paste(y, "~ 1"))
   pim.score <- pim(formula, data=data, compare = comp, link="identity",vcov.estim = score.vcov)
-  
-  lv1 <- paste("t(combn(levels(as.factor(data$",x,")),2))[,1]",sep="")
-  lv2 <- paste("t(combn(levels(as.factor(data$",x,")),2))[,2]",sep="")
-  newnames <- paste(eval(x),
-                    eval(parse(text =lv1)),
-                    eval(parse(text =lv2)),sep="")  
-  names(pim.score@coef) <- colnames(pim.score@vcov) <- rownames(pim.score@vcov) <- newnames
+    
   
   #pim.score@coef <- pim.score@coef - 0.5/ncol(model.matrix(pim.score))
   overall_test <- (coef(pim.score)-0.5)%*%ginv(sqrt(vcov(pim.score)))
-  #pval_overall <- 1 - pchisq(overall_test,df_overall)
-  
-  pim.wald <- pim(formula, data=data, compare = comp, link="identity",vcov.estim = sandwich.vcov)
-  wald <- (coef(pim.wald)-0.5)%*%ginv(sqrt(vcov(pim.wald)))
-
   if(alternative=="two.sided"){
     pval_overall <- (1 - pnorm(abs(overall_test)))*2
-    p.wald <- (1 - pnorm(abs(wald)))*2
   } else {
     if(alternative=="greater"){
       pval_overall <- (1-pnorm(overall_test))
-      p.wald <- (1-pnorm(wald))
     } else {
       pval_overall <- pnorm(overall_test)
-      p.wald <- pnorm(wald)
     }
   }
+  #pval_overall <- 1 - pchisq(overall_test,df_overall)
+  
+  pim.wald <- pim(formula, data=data, compare = comp, link="identity",vcov.estim = sandwich.vcov)
+  
   
   new('wilcox.pim',
       formula = formula,
@@ -69,8 +59,6 @@ wilcox.pim <- function(formula, data, h0 = 0.5,alternative="two.sided",...){
       prwald = summary(pim.wald, h0=h0)@pr,
       z_overall = as.numeric(overall_test),
       pr_z = as.numeric(pval_overall),
-      wald = as.numeric(wald),
-      pr_w = as.numeric(p.wald),
       h0 = h0,
       alternative = alternative
   )
@@ -88,8 +76,6 @@ setClass(
             prwald = 'numeric',
             z_overall = 'numeric',
             pr_z = 'numeric',
-            wald = 'numeric',
-            pr_w = 'numeric',
             h0 = 'numeric',
             alternative = 'character'
   )
@@ -107,14 +93,6 @@ summary.wilcox.pim <- function(object,method,
     }
   }
   
-  if(method == "Wald"){
-    z_overall = object@wald
-    pr_z = object@pr_w
-  } else {
-    z_overall = object@z_overall
-    pr_z = object@pr_z
-  }
-  
   
   new("wilcox.pim.summary",
       formula=object@formula,
@@ -125,8 +103,8 @@ summary.wilcox.pim <- function(object,method,
       zwald = object@zwald,
       pr = object@pr,
       prwald = object@prwald,
-      z_overall = z_overall,
-      pr_z = pr_z,
+      z_overall = object@z_overall,
+      pr_z = object@pr_z,
       h0 = object@h0,
       method = method,
       alternative = object@alternative
@@ -334,3 +312,4 @@ setMethod('confint',
 setMethod('confint',
           'wilcox.pim.summary',
           confint.wilcox.pim.summary)
+
