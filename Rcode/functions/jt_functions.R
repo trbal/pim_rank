@@ -1,3 +1,4 @@
+
 jt.pim <- function(formula, data, alternative = "two.sided",...){
   if(missing(formula) || (length(formula) != 3L))
     stop("'formula' missing or incorrect")
@@ -44,14 +45,19 @@ jt.pim <- function(formula, data, alternative = "two.sided",...){
                   link = "identity", vcov.estim = sandwich.vcov,
                   compare = "all")  
   
+  wald <- (coef(pim.wald)[2])/sqrt(vcov(pim.wald)[2,2])
+  
   overall_test <- (coef(pim.score)[2])/sqrt(vcov(pim.score)[2,2])
   if(alternative=="two.sided"){
     pval_overall <- (1 - pnorm(abs(overall_test)))*2
+    p.wald <- (1 - pnorm(abs(wald)))*2
   } else {
     if(alternative=="greater"){
       pval_overall <- (1-pnorm(overall_test))
+      p.wald <- (1-pnorm(wald))
     } else {
       pval_overall <- pnorm(overall_test)
+      p.wald <- pnorm(wald)
     }
   }
   
@@ -72,7 +78,10 @@ jt.pim <- function(formula, data, alternative = "two.sided",...){
       JT = JT,
       zval_overall = overall_test,
       pval_overall = pval_overall,
+      wald = as.numeric(wald),
+      pr_w = as.numeric(p.wald),
       alternative = alternative)
+  
 }
 
 
@@ -90,6 +99,8 @@ setClass(
             JT = 'numeric',
             zval_overall = 'numeric',
             pval_overall = 'numeric',
+            wald = 'numeric',
+            pr_w = 'numeric',
             alternative = 'character'
   )
 )
@@ -106,6 +117,14 @@ summary.jt.pim <- function(object,method,
     }
   }
   
+  if(method == "Wald"){
+    zval_overall = object@wald
+    pval_overall = object@pr_w
+  } else {
+    zval_overall = object@zval_overall
+    pval_overall = object@pval_overall
+  }
+  
   new("jt.pim.summary",
       formula=object@formula,
       coef = object@coef,
@@ -113,8 +132,8 @@ summary.jt.pim <- function(object,method,
       zval = object@zval,
       pr = object@pr,
       JT = object@JT,
-      zval_overall = object@zval_overall,
-      pval_overall = object@pval_overall,
+      zval_overall = zval_overall,
+      pval_overall = pval_overall,
       alternative = object@alternative,
       method = method
   )
