@@ -36,13 +36,10 @@ kw.pim <- function(formula, data, h0 = 0.5,...){
   p.wald <- 1 - pchisq(wald, ncol(vcov(pim.wald)))
   
   cf <- coef(pim.score)
-  #names(cf) <- paste(pnames_old, c(1:length(cf)), sep="")
   
   vcov.wald <- vcov(pim.wald)
-  #colnames(vcov.wald) <- rownames(vcov.wald) <- names(cf)
   
   se.wald <- summary(pim.wald, h0 = h0)@se
-  #names(se.wald) <- paste(pnames_old, c(1:length(cf)), sep="")
   
   new('kw.pim',
       formula = formula,
@@ -96,7 +93,15 @@ summary.kw.pim <- function(object,method,
       stop("'method' is not correctly defined")
     }
   }
-  
+  if(method == "Wald"){
+    chi_sq = object@wald
+    df_cs = object@df_w
+    pr_cs = object@pr_w
+  } else {
+    chi_sq = object@chi_sq
+    df_cs = object@df_cs
+    pr_cs = object@pr_cs
+  }
   new("kw.pim.summary",
       formula=object@formula,
       coef = object@coef,
@@ -106,9 +111,9 @@ summary.kw.pim <- function(object,method,
       zwald = object@zwald,
       pr = object@pr,
       prwald = object@prwald,
-      chi_sq = object@chi_sq,
-      df_cs = object@df_cs,
-      pr_cs = object@pr_cs,
+      chi_sq = chi_sq,
+      df_cs = df_cs,
+      pr_cs = pr_cs,
       h0 = object@h0,
       method = method
   )
